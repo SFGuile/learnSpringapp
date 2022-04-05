@@ -1,0 +1,864 @@
+package com.example.demo;
+
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+
+import org.springframework.core.io.InputStreamResource;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.example.demo.model.DZSBB;
+import com.example.demo.model.ExcelContents;
+import com.example.demo.model.MXXX;
+import com.example.demo.model.SB_FWSKKP;
+import com.example.demo.model.SB_FWSKKP_BTXX;
+import com.example.demo.model.SB_FWSKKP_FPXX;
+import com.example.demo.model.SB_FWSKKP_MXXX;
+import com.example.demo.model.SP;
+
+
+@Controller
+public class HomeController {
+    
+	@RequestMapping( value={"/","/home"})
+	public String home(){
+		
+		System.out.print("hi");
+		return "home";
+	}
+	
+	@RequestMapping( value={"/releasenote"})
+	public String releasenote(){
+		
+		System.out.print("hi");
+		return "releasenote";
+	}
+	
+	
+	
+	 
+	@PostMapping("/uploadfile")
+	 public   ModelAndView uploadFile(@RequestParam("file") MultipartFile file,
+	    		@RequestParam(name="address", required = false) String myaddress,
+	    		@RequestParam(name="bankaccount", required = false) String mybankaccount,
+	    		@RequestParam(name="kpr", required = false) String mykpr,
+	    		@RequestParam(name="skr", required = false) String myskr,
+	    		@RequestParam(name="fhr", required = false) String myfhr) {
+
+		String TYPE = "application/vnd.ms-excel";
+		
+		if (TYPE.equals(file.getContentType())) {
+	        try {
+	    
+	        	
+	          List<ExcelContents> tempExcelcontentList = new ArrayList<ExcelContents>();
+	           HSSFWorkbook workbook = new HSSFWorkbook(file.getInputStream());
+	            
+	      	   
+	           String consequencemsg="";
+	           int errsheetcount=0;
+	           int recordscount=0;
+	           int sheetscount=0;
+	           int invoiceindex=0;
+	           
+	           for (int  j= 0; j < workbook.getNumberOfSheets(); j++) {
+	            	 HSSFSheet worksheet = workbook.getSheetAt(j);
+	            	 String sheetname=workbook.getSheetName(j);
+	            	 short notoligable=0;
+	      	    for(int i=0;i<worksheet.getPhysicalNumberOfRows() ;i++) {
+	      	    	 HSSFRow row=worksheet.getRow(i);
+	      	    	if (i==0)
+	      	    	{
+	      	    		
+	      	    		String title=row.getCell(0).getStringCellValue();
+	      	    		String comparestr="序号";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+	      	    		 
+	      	    			consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(1).getStringCellValue();
+	      	    		comparestr="发票代码";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+	      	    			consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(2).getStringCellValue();
+	      	    		comparestr="发票号码";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+	      	    			consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(3).getStringCellValue();
+	      	    		comparestr="销方识别号";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    	 	{
+	      	    			consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(4).getStringCellValue();
+	      	    		comparestr="销方名称";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+	      	    			consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(5).getStringCellValue();
+	      	    		comparestr="购方识别号";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+	      	    			consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(6).getStringCellValue();
+	      	  		    comparestr="购方名称";
+	      	  		    if (!title.trim().equals(comparestr))
+	      	    		{
+	  	    		  	    consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	  	    			    errsheetcount++;
+	  	    			  notoligable=1;
+	  	    			    break;
+	      	    		}
+	      	    		
+	      	    		
+	  	    		    title=row.getCell(7).getStringCellValue();
+	  	    		    comparestr="购方地址电话";
+	  	    		    if (!title.trim().equals(comparestr))
+	      	    	 
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+		    		    
+	      	    		title=row.getCell(8).getStringCellValue();
+	      	    	    comparestr="购方银行账号";
+	      	    	  if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(9).getStringCellValue();
+	      	    	    comparestr="密文";
+	      	    	  if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(10).getStringCellValue();
+	      	    		comparestr="开票日期";
+	      	    		if (!title.trim().equals(comparestr))
+	      	      		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(11).getStringCellValue();
+	      	    	    comparestr="金额";
+	      	    	  if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(12).getStringCellValue();
+	      	    	    comparestr="税额";
+	      	    	  if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(13).getStringCellValue();
+	      	    		comparestr="主要商品名称";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(14).getStringCellValue();
+	      	    		comparestr="备注";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(15).getStringCellValue();
+	      	    	    comparestr="是否作废";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(16).getStringCellValue();
+	      	    		comparestr="发票类别";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(17).getStringCellValue();
+	      	    		comparestr="是否收购";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(18).getStringCellValue();
+	      	    	    comparestr="是否差额征收";
+	      	    	  if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(19).getStringCellValue();
+	      	    		comparestr="开票机号";
+	      	    		if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+	      	    		title=row.getCell(20).getStringCellValue();
+	      	    	    comparestr="商品名称";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+		    		    title=row.getCell(21).getStringCellValue();
+	      	    	    comparestr="商品税收分类编码";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+		    		    
+		    		    title=row.getCell(22).getStringCellValue();
+	      	    	    comparestr="数量";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+		    		    title=row.getCell(23).getStringCellValue();
+	      	    	    comparestr="金额";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+		    		    title=row.getCell(24).getStringCellValue();
+	      	    	    comparestr="税额";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出</br> ";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+	      	    		
+		    		    title=row.getCell(25).getStringCellValue();
+	      	    	    comparestr="税率";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+		    		    
+		    		    title=row.getCell(26).getStringCellValue();
+	      	    	    comparestr="规格型号";
+	      	    	    if (!title.trim().equals(comparestr))
+	      	    		{
+		    		    	consequencemsg=consequencemsg+"Excel 表名叫"+sheetname+"第"+Integer.toString(i+1) +"个标题不是"+comparestr+"，与预定的Excel不同，程序退出 </br>";
+	      	    			errsheetcount++;
+	      	    			notoligable=1;
+	      	    			 break;
+	      	    		}
+		    		    
+	      	    	}
+	      	    	else
+	      	    	{
+	      	    	   ExcelContents invoiceexcelcontent = new ExcelContents();
+	      	    	   invoiceexcelcontent.setSn(row.getCell(0).getStringCellValue());
+	      	    	   invoiceexcelcontent.setInvoicecode(row.getCell(1).getStringCellValue());
+	      	    	   invoiceexcelcontent.setInvoicenum(row.getCell(2).getStringCellValue());
+	      	    	   invoiceexcelcontent.setSellerid(row.getCell(3).getStringCellValue());
+	      	    	   invoiceexcelcontent.setSellername(row.getCell(4).getStringCellValue());
+	      	    	   invoiceexcelcontent.setBuyerid(row.getCell(5).getStringCellValue());
+	      	    	   invoiceexcelcontent.setBuyername(row.getCell(6).getStringCellValue());
+	      	    	   invoiceexcelcontent.setBuyeradd(row.getCell(7).getStringCellValue());
+	      	    	   invoiceexcelcontent.setBuyerbankacc(row.getCell(8).getStringCellValue());
+	      	    	   invoiceexcelcontent.setCryptocontents(row.getCell(9).getStringCellValue());
+	      	    	   invoiceexcelcontent.setIssuedate(row.getCell(10).getStringCellValue());
+	      	    	   invoiceexcelcontent.setTotal(row.getCell(11).getNumericCellValue());
+	      	    	   invoiceexcelcontent.setTaxtotal(row.getCell(12).getNumericCellValue());
+	      	    	   invoiceexcelcontent.setMainproductname(row.getCell(13).getStringCellValue());
+	      	    	   invoiceexcelcontent.setMemo(row.getCell(14).getStringCellValue());
+	      	    	   invoiceexcelcontent.setIfappeal(row.getCell(15).getStringCellValue());
+	      	    	   invoiceexcelcontent.setInvoicetype(row.getCell(16).getStringCellValue());
+	      	    	   invoiceexcelcontent.setIfaccquired(row.getCell(17).getStringCellValue());
+	      	    	   invoiceexcelcontent.setIfdiffecent(row.getCell(18).getStringCellValue());
+	      	    	   invoiceexcelcontent.setPoscode(row.getCell(19).getStringCellValue());
+	      	    	   invoiceexcelcontent.setProductname(row.getCell(20).getStringCellValue());
+	      	    	   invoiceexcelcontent.setTaxtypecode(row.getCell(21).getStringCellValue());
+	      	    	   
+	      	    	   if (isNumeric(row.getCell(22).getStringCellValue().trim()))
+	      	    	   {
+	      	    		 invoiceexcelcontent.setThenumber(Double.parseDouble(row.getCell(22).getStringCellValue().trim())); 
+	      	    		 invoiceexcelcontent.setNullvaluemark(false);
+	      	    	   }
+	      	    	   else
+	      	    	   {
+	      	    		 invoiceexcelcontent.setThenumber(0);
+	      	    		 invoiceexcelcontent.setNullvaluemark(true);
+	      	    		 consequencemsg=consequencemsg+"警告： 在Excel表名叫'"+sheetname+"' 第"+ Integer.toString(i+1) +"行'数量'字段没有数字，是空的，整张单会特别处理</br>";
+	      	    	   }
+	      	    	   
+	      	    	//   invoiceexcelcontent.setThenumber(row.getCell(22).getNumericCellValue());
+	      	    	   invoiceexcelcontent.setAmount(row.getCell(23).getNumericCellValue());
+	      	    	   invoiceexcelcontent.setTax(row.getCell(24).getNumericCellValue());
+	      	    	   invoiceexcelcontent.setTaxrate(row.getCell(25).getNumericCellValue());
+	      	    	   invoiceexcelcontent.setProdsize(row.getCell(26).getStringCellValue());	 
+	      	    	   tempExcelcontentList.add(invoiceexcelcontent);
+	      	    	   recordscount++;
+	      	    	}
+	      	     
+	      	          
+	      	     }
+	      	    
+	      	       if(notoligable==0)
+	      	       {
+	      	    	 consequencemsg=consequencemsg+"Excel 的'"+sheetname+"'导入成功   </br>";
+	      	    	 sheetscount++;
+	      	       }
+	      	    }
+	            
+	           
+	           if (errsheetcount==workbook.getNumberOfSheets())
+	           {
+	        	   consequencemsg="些excel不是增值税发票Excel，不能导入任何数据</br>";
+	           }
+	           else if(recordscount==0)
+	           {
+	        	   consequencemsg="些excel数据为空</br>";
+	           }
+	           else
+	           {
+	        	   consequencemsg=consequencemsg+" 共导入"+Integer.toString(sheetscount)+"个表，"+Integer.toString(recordscount)+"个记录</br>";
+	           }
+	           
+	           workbook.close();
+	           
+	           String invoicenumbercurrent="";
+	           String invoicenumberprevious="";
+	           DZSBB dzsbb=new DZSBB();
+	           SB_FWSKKP fwskpp=new SB_FWSKKP();
+	           dzsbb.setSB_FWSKKP(fwskpp);
+	           SB_FWSKKP_BTXX fwskkpbtxx=new SB_FWSKKP_BTXX();
+	           SB_FWSKKP_FPXX fwskkpfpxx=new SB_FWSKKP_FPXX();
+	           List<SB_FWSKKP_MXXX> mxxlist=new ArrayList<SB_FWSKKP_MXXX>();
+	           List<SP> splist=new ArrayList<SP>();
+	           fwskpp.setSB_FWSKKP_FPXX(fwskkpfpxx);
+	           fwskkpfpxx.setSB_FWSKKP_MXXX(mxxlist);
+	           
+	           int elementindex=0;
+	           boolean nullvaluemark=false;
+	           boolean continueignore=false;
+	           int nullvaluemarkcount=0;
+	           for (ExcelContents xc:tempExcelcontentList) {
+	        	   
+	        	   if (elementindex==0)
+	        	   {
+	        		   fwskkpbtxx.setSB_FWSKKP_BTXX_NSRSBH(xc.getSellerid());
+	        		   String issuedatestring=xc.getIssuedate();
+	        		   if (issuedatestring.length()>=6)
+	        		   fwskkpbtxx.setSB_FWSKKP_BTXX_KPYF(issuedatestring.substring(6));
+	        		  
+	        	   }
+	        	   
+	        	   
+	        	       invoicenumbercurrent=xc.getInvoicenum();
+	        	  
+	        		  
+	        		   
+	        		   SB_FWSKKP_MXXX fwskkpmxxx=new SB_FWSKKP_MXXX();
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_XH(Integer.toString(invoiceindex));
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_FPDM(xc.getInvoicecode());
+	        		   String theinvoicenumber=xc.getInvoicenum();
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_FPHM(theinvoicenumber);
+	        		   
+	        		   if(theinvoicenumber.equals("04185825"))
+	        			   System.out.print("04185825");
+	                           		   
+	        		   MXXX mxxx=new MXXX();
+	        		 //  mxxx.setSB_FWSKKP_MXXX_XFDZDH(myaddress);
+	        		 //  mxxx.setSB_FWSKKP_MXXX_XFYHZH(mybankaccount);
+	        		    
+	        		
+	        		   
+	        		 //  String myaddressGBK=charsetConvert(myaddress,"GBK");
+	        	//	   byte[] myaddressUTF8=myaddress.getBytes();
+	        	//	   String myaddressUNI=new String(myaddressUTF8,"UTF-8"); 
+	        //		   String myaddressGBK=new String(myaddressUNI.getBytes("GBK"));
+	        		   String myaddressGBK=utf8Togbk(myaddress);
+	        		   mxxx.setSB_FWSKKP_MXXX_XFDZDH(myaddressGBK);
+	        		   
+	        		
+	        		   
+	        		//   String mybankaccountGBK=charsetConvert(mybankaccount,"GBK");
+	        		//   byte[] mybankaccountUTF8=mybankaccount.getBytes();
+	        		 //  String mybankaccountUNI=new String(mybankaccountUTF8,"UTF-8"); 
+	        		 //  String mybankaccountGBK=new String(mybankaccountUNI.getBytes("GBK"));
+	        		   String mybankaccountGBK=utf8Togbk(mybankaccount);
+	        		   mxxx.setSB_FWSKKP_MXXX_XFYHZH(mybankaccountGBK);
+	        		   
+	        		   fwskkpmxxx.setMXXX(mxxx);
+	        		  
+	        		   //fwskkpmxxx.setSB_FWSKKP_MXXX_XFMC(xc.getSellername());
+	        		  // String sellernameGBK=charsetConvert(xc.getSellername(),"GBK");
+	        		//   byte[] sellernameUTF8=xc.getSellername().getBytes();
+	        		 //  String sellernameUNI=new String(sellernameUTF8,"UTF-8"); 
+	        		 //  String sellernameGBK=new String(sellernameUNI.getBytes("GBK"));
+	        		   String sellernameGBK=utf8Togbk(xc.getSellername());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_XFMC(sellernameGBK);
+	        		   
+	        		 
+	        		   
+	        		   
+	        		   
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_XFSBH(xc.getSellerid());
+	        		 //  fwskkpmxxx.setSB_FWSKKP_MXXX_GFMC(xc.getBuyername());
+	        		   
+	        		//   String BuyernameGBK=charsetConvert(xc.getBuyername(),"GBK");
+	        		//   byte[] BuyernameUTF8=xc.getBuyername().getBytes();
+	        		//   String BuyernameUNI=new String(BuyernameUTF8,"UTF-8"); 
+	        		//   String BuyernameGBK=new String( BuyernameUNI.getBytes("GBK"));
+	        		   String BuyernameGBK=utf8Togbk(xc.getBuyername());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_GFMC(BuyernameGBK);
+	        		   
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_GFSBH(xc.getBuyerid());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_KPJH(xc.getPoscode());
+	        		   
+	        		  // fwskkpmxxx.setSB_FWSKKP_MXXX_GFDZDH(xc.getBuyeradd());
+	        		//   String buyeraddGBK=charsetConvert(xc.getBuyeradd(),"GBK");
+	        		//   byte[] buyeraddUTF8=xc.getBuyeradd().getBytes();
+	        		//   String buyeraddUNI=new String(buyeraddUTF8,"UTF-8"); 
+	        		//   String buyeraddGBK=new String(buyeraddUNI.getBytes("GBK"));
+	        		   String buyeraddGBK=utf8Togbk(xc.getBuyeradd());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_GFDZDH(buyeraddGBK);
+	        		   
+	        		   //fwskkpmxxx.setSB_FWSKKP_MXXX_GFYHZH(xc.getBuyerbankacc());
+	        		//   String BuyerbankaccGBK=charsetConvert(xc.getBuyerbankacc(),"GBK");
+	        		//   byte[] BuyerbankaccUTF8=xc.getBuyerbankacc().getBytes();
+	        		//   String BuyerbankaccUNI=new String(BuyerbankaccUTF8,"UTF-8"); 
+	        		//   String BuyerbankaccGBK=new String(BuyerbankaccUNI.getBytes("GBK"));
+	        		   String BuyerbankaccGBK=utf8Togbk(xc.getBuyerbankacc());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_GFYHZH(BuyerbankaccGBK);
+	        		   
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_MW(xc.getCryptocontents());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_KPRQ(xc.getIssuedate());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_JE(xc.getTotal());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_SL(xc.getTaxrate());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_SE(xc.getTaxtotal());
+	        		   
+	        		 //  fwskkpmxxx.setSB_FWSKKP_MXXX_ZYSPMC(xc.getMainproductname());
+	        		 //  String MainproductnameGBK=charsetConvert(xc.getMainproductname(),"GBK");
+	        		//   byte[] MainproductnameUTF8=xc.getMainproductname().getBytes();
+	        		 //  String MainproductnameUNI=new String(MainproductnameUTF8,"UTF-8"); 
+	        		 //  String MainproductnameGBK=new String(MainproductnameUNI.getBytes(),"GBK");
+	        		   String MainproductnameGBK=utf8Togbk(xc.getMainproductname());
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_ZYSPMC(MainproductnameGBK);
+	        		   
+	        		   String invoicetype=xc.getInvoicetype();
+	        		   if (invoicetype.trim().equals("增值税普通发票"))
+	        		   {
+	        				   fwskkpmxxx.setSB_FWSKKP_MXXX_SPSM("4001");
+	        				   fwskkpmxxx.setSB_FWSKKP_MXXX_FPZL(2);
+	        		   }
+	        		   else
+	        		   {
+	        			   fwskkpmxxx.setSB_FWSKKP_MXXX_FPZL(1);
+	        		   }
+	        		   
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_BZ(xc.getMemo());
+	        		   
+	        		   
+	        		   String ifdifference=xc.getIfdiffecent();
+	        		   if (ifdifference.trim().equals("非差额发票"))
+	        			   fwskkpmxxx.setSB_FWSKKP_MXXX_CEZS(0);
+	        		   else
+	        			   fwskkpmxxx.setSB_FWSKKP_MXXX_CEZS(1);
+	        		   
+	        		   String ifappealstr=xc.getIfappeal();
+	        		   
+	        		   if(ifappealstr.trim().equals("未作废"))
+	        		     fwskkpmxxx.setSB_FWSKKP_MXXX_ZFBZ(0);
+	        		   else
+	        			   fwskkpmxxx.setSB_FWSKKP_MXXX_ZFBZ(1);
+	        		   
+	        		   String ifaccquired=xc.getIfaccquired();
+	        		   if(ifaccquired.trim().equals("非收购发票"))
+	        			   fwskkpmxxx.setSB_FWSKKP_MXXX_SGBZ(0);
+	        		   else
+	        			   fwskkpmxxx.setSB_FWSKKP_MXXX_SGBZ(1);
+	        		   
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_JSHJ(xc.getTotal()+xc.getTaxtotal());
+	        		//   fwskkpmxxx.setSB_FWSKKP_MXXX_KPR(mykpr);
+	        		//   String mykprGBK=charsetConvert(mykpr,"GBK");
+	        		//   byte[] mykprUTF8=mykpr.getBytes();
+	        		//   String mykprUNI=new String(mykprUTF8,"UTF-8");
+	        		//   String mykprGBK=new String(mykprUNI.getBytes("GBK"));
+	        		   String mykprGBK=utf8Togbk(mykpr);
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_KPR(mykprGBK);
+	        		   
+	        		//   fwskkpmxxx.setSB_FWSKKP_MXXX_SKR(myskr); 
+	        		 //  String myskrGBK=charsetConvert(myskr,"GBK");
+	        		//   byte[] myskrUTF8=myskr.getBytes();
+	        		 //  String myskrUNI=new String(myskrUTF8,"UTF-8");
+	        		 //  String myskrGBK=new String(myskrUNI.getBytes("GBK"));
+	        		   String myskrGBK=utf8Togbk(myskr);
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_SKR(myskrGBK);
+	        		   
+	        		//   fwskkpmxxx.setSB_FWSKKP_MXXX_FHR(myfhr);
+	        		//   String myfhrGBK=charsetConvert(myfhr,"GBK");
+	        		//   byte[] myfhrUTF8=myfhr.getBytes();
+	        		//   String myfhrUNI=new String(myfhrUTF8,"UTF-8");
+	        		//   String myfhrGBK=new String(myfhrUNI.getBytes("GBK"));
+	        		   String myfhrGBK=utf8Togbk(myfhr);
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_FHR(myfhrGBK);
+	        		   
+	        		   nullvaluemark=xc.isNullvaluemark();
+	        		   
+	        				  
+	        		   if (!invoicenumbercurrent.equals(invoicenumberprevious))
+	            	   {
+	        			  
+	        			   mxxlist.add(fwskkpmxxx);
+	        			   splist.clear();
+	        			   continueignore=false;
+		        		   nullvaluemarkcount=0;
+		        		   invoiceindex++;
+		        		   fwskkpmxxx.setSB_FWSKKP_MXXX_XH(Integer.toString(invoiceindex));
+	            	   }
+	        		   
+	        		   if (nullvaluemark==true)
+	        			   continueignore=true;
+	        			  
+	        		  
+	        	    if (continueignore==false)
+	        	    {
+	        	       SP sp=new SP();
+	        	       sp.setJE(xc.getAmount());
+	        	       sp.setSL(xc.getTaxrate());
+	        	       sp.setSE(xc.getTax());
+	        	    //   sp.setSPMC(xc.getProductname());
+	        	   //     String productnameGBK=charsetConvert(xc.getProductname(),"GBK");
+	        	   //    byte[] productnameUTF8=xc.getProductname().getBytes("ISO-8859-1");
+	        	//	   String productnameUNI=new String(productnameUTF8,"UTF-8");
+	        	 //      String productnameGBK=new String(productnameUNI.getBytes("GBK"));
+	        	       String productnameGBK=utf8Togbk(xc.getProductname());
+	        	        sp.setSPMC(productnameGBK);
+	        	     //  sp.setGGXH(xc.getProdsize());
+	        	    //    String prodsizeGBK=charsetConvert(xc.getProdsize(),"GBK");
+	        	     //   byte[] prodsizeUTF8=xc.getProdsize().getBytes();
+		        	//	String prodsizeUNI=new String(prodsizeUTF8,"UTF-8");
+	        	     //   String prodsizeGBK=new String(prodsizeUNI.getBytes("GBK"));
+	        	        String prodsizeGBK=utf8Togbk(xc.getProdsize());
+	        	        sp.setSPMC(prodsizeGBK);
+	        	     //  sp.setJLDW("盒");
+	        	      //  String monadGBK=charsetConvert("盒","GBK");
+	        	        String monad="盒";
+	        	   //     byte[] monadUTF8=monad.getBytes();
+		        //		String monadUNI=new String(monadUTF8,"UTF-8");
+	        	 //       String monadGBK=new String(monadUNI.getBytes("GBK"));
+	        	        String monadGBK=utf8Togbk(monad);
+	        	        sp.setJLDW(monadGBK);
+	        	        
+	        	       sp.setSHUL(xc.getThenumber());
+	        	       sp.setDJ((xc.getAmount()+xc.getTax())/xc.getThenumber());
+	        	       sp.setFLBM(xc.getInvoicecode());
+	        	       sp.setHSBZ("True");
+	        	       splist.add(sp);
+	        	   
+                  
+	        	   
+	        	       List<SP> mysplist=new ArrayList<SP>();
+				       mysplist.addAll(splist);
+				       fwskkpmxxx.setSPXX(mysplist);
+	        	   }
+	        	   else if (nullvaluemarkcount==0)
+	        	   {
+	        		   
+	        		   invoiceindex=invoiceindex-splist.size();
+	        		   fwskkpmxxx.setSB_FWSKKP_MXXX_XH(Integer.toString(invoiceindex));
+	        		   splist.clear();
+	        		   SP sp=new SP();
+		        	   sp.setJE(xc.getTotal());
+		        	   sp.setSL(xc.getTaxrate());
+		        	   sp.setSE(xc.getTaxtotal());
+		        	//   sp.setSPMC("(详见销货清单)");
+		        	 //  String prodnameGBK=charsetConvert("(详见销货清单)","GBK");
+		        	   String prodname="(详见销货清单)";
+		        	//   byte[] prodnameUTF8=prodname.getBytes("ISO-8859-1");
+		        	//   String prodnameUNI=new String(prodnameUTF8,"UTF-8");
+		        	//   String prodnameGBK=new String(prodnameUNI.getBytes("GBK"));
+		        	   String prodnameGBK=utf8Togbk(prodname);
+		        	   sp.setSPMC(prodnameGBK);
+		        	   sp.setHSBZ("False");
+		        	   splist.add(sp);	
+	        		   nullvaluemarkcount++;
+	    		  	   List<SP> mysplist=new ArrayList<SP>();
+					   mysplist.addAll(splist);
+					   fwskkpmxxx.setSPXX(mysplist);
+	        	   }
+	        	   else
+	        	   {
+	        		     splist.clear();
+	        	   }
+	        	   
+	        	  
+				   
+	    		  
+	        	   
+	        	   elementindex++;
+	        	   invoicenumberprevious=invoicenumbercurrent;
+	           }
+	           
+	           UUID uuid = UUID.randomUUID();
+	           
+	           File xmlfilename = new File(uuid.toString()+".xml");
+	       
+	           JAXBContext jaxbContext = JAXBContext.newInstance(DZSBB.class);
+	           Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+
+	           // output pretty printed
+	           
+	          // String charset=System.getProperty("file.encoding");
+	           jaxbMarshaller.setProperty(Marshaller.JAXB_ENCODING, "GBK"); 
+	           jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+	           jaxbMarshaller.setProperty(Marshaller.JAXB_FRAGMENT, false);
+
+	           jaxbMarshaller.marshal(dzsbb, xmlfilename);
+	           jaxbMarshaller.marshal(dzsbb, System.out);
+	           
+	           ModelAndView model = new ModelAndView("result");
+	           model.addObject("excecontentslist",tempExcelcontentList);
+	           model.addObject("message",consequencemsg);
+	           model.addObject("downloadfile",xmlfilename);
+	           model.addObject("test","hello world!");
+	           return model;
+	        	
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            throw new FileStorageException("读取Excel时出错， " + file.getOriginalFilename()
+	                + ". 请重试!");
+	        }
+		}
+		else
+		{
+			  ModelAndView model = new ModelAndView("exception");
+	         
+	           model.addObject("message","此文件不是Excel");
+	           
+	           return model;
+		}
+	    }
+	
+	
+	@RequestMapping(path = "/download", method = RequestMethod.POST)
+	public void saveTxtFile(HttpServletResponse response,@RequestParam("filename") String filename) throws IOException {
+
+	    String yourXmlFileInAString;
+	    response.setContentType("application/xml;charset=GBK");
+	    response.setCharacterEncoding("GBK");
+	    response.setHeader("Content-Disposition", "attachment;filename="+filename);
+
+	    BufferedReader br = new BufferedReader(new FileReader(filename));
+	    String line;
+	    StringBuilder sb = new StringBuilder();
+
+	    while((line=br.readLine())!= null){
+	        sb.append(line);
+	    }
+
+	    yourXmlFileInAString  = sb.toString();
+        
+	    ServletOutputStream outStream = response.getOutputStream();
+	    outStream.write(yourXmlFileInAString.getBytes(Charset.forName("GBK")));
+	    outStream.flush();
+	    outStream.close();
+	}
+	
+	private static boolean isNumeric(String strNum) {
+	    if (strNum == null) {
+	        return false;
+	    }
+	    try {
+	        double d = Double.parseDouble(strNum);
+	    } catch (NumberFormatException nfe) {
+	        return false;
+	    }
+	    return true;
+	}
+	
+	private String charsetConvert(String str, String charset) {
+	    try {
+	        str = new sun.misc.BASE64Encoder().encode(str.getBytes(charset));
+	        byte[] bytes = new sun.misc.BASE64Decoder().decodeBuffer(str);
+	        str = new String(bytes, charset);
+	    } catch(IOException e) {
+	        e.printStackTrace();
+	    }
+	    return str;
+	}
+	
+	private String utf8Togbk(String str){
+
+		StringBuffer sb = new StringBuffer();   
+		  
+        for ( int i=0; i<str.length(); i++) {   
+  
+            char c = str.charAt(i);   
+            switch (c) {   
+               case '+' :   
+                   sb.append( ' ' );   
+               break ;   
+               case '%' :   
+                   try {   
+                        sb.append(( char )Integer.parseInt (   
+                        str.substring(i+1,i+3),16));   
+                   }   
+                   catch (NumberFormatException e) {   
+                       throw new IllegalArgumentException();   
+                  }   
+  
+                  i += 2;   
+  
+                  break ;   
+                    
+               default :   
+  
+                  sb.append(c);   
+  
+                  break ;   
+  
+             }   
+  
+        }   
+  
+        String result = sb.toString();   
+  
+        String res= null ;   
+  
+        try {   
+  
+             byte [] inputBytes = result.getBytes( "8859_1" );   
+  
+            res= new String(inputBytes, "UTF-8" );   
+  
+        }   
+  
+        catch (Exception e){}   
+  
+        return res;   
+  
+  }
+}

@@ -1,0 +1,86 @@
+package com.example.demo.model;
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name="SP")  
+public class SP {
+
+	private double JE;
+	private double SL;
+	private double SE;
+	private String SPMC;
+	private String SPSM;
+	private String GGXH;
+	private String JLDW;
+	private double SHUL;
+	private double DJ;
+	private String FLBM;
+	private String HSBZ; 
+	
+	public double getJE() {
+		return JE;
+	}
+	public void setJE(double jE) {
+		JE = jE;
+	}
+	public double getSL() {
+		return SL;
+	}
+	public void setSL(double sL) {
+		SL = sL;
+	}
+	public double getSE() {
+		return SE;
+	}
+	public void setSE(double sE) {
+		SE = sE;
+	}
+	public String getSPMC() {
+		return SPMC;
+	}
+	public void setSPMC(String sPMC) {
+		SPMC = sPMC;
+	}
+	public String getSPSM() {
+		return SPSM;
+	}
+	public void setSPSM(String sPSM) {
+		SPSM = sPSM;
+	}
+	public String getGGXH() {
+		return GGXH;
+	}
+	public void setGGXH(String gGXH) {
+		GGXH = gGXH;
+	}
+	public String getJLDW() {
+		return JLDW;
+	}
+	public void setJLDW(String jLDW) {
+		JLDW = jLDW;
+	}
+	public double getSHUL() {
+		return SHUL;
+	}
+	public void setSHUL(double sHUL) {
+		SHUL = sHUL;
+	}
+	public double getDJ() {
+		return DJ;
+	}
+	public void setDJ(double dJ) {
+		DJ = dJ;
+	}
+	public String getFLBM() {
+		return FLBM;
+	}
+	public void setFLBM(String fLBM) {
+		FLBM = fLBM;
+	}
+	public String getHSBZ() {
+		return HSBZ;
+	}
+	public void setHSBZ(String hSBZ) {
+		HSBZ = hSBZ;
+	}
+}

@@ -1,0 +1,14 @@
+package com.example.demo.model;
+
+import java.util.List;
+
+public class SPXX {
+	private List<SP> SPXX=null;
+	
+	public List<SP> getSPXX() {
+		return SPXX;
+	}
+	public void setSPXX(List<SP> sPXX) {
+		this.SPXX = sPXX;
+	}
+}
